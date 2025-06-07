@@ -29,7 +29,8 @@ jobs:
           echo "zipStorePath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
           echo "zipStoreBase=GRADLE_USER_HOME" >> gradle/wrapper/gradle-wrapper.properties
         fi
-        [ -f gradle/wrapper/gradle-wrapper.jar ] || curl -sLo gradle/wrapper/gradle-wrapper.jar https://github.com/gradle/gradle/raw/master/subprojects/wrapper/src/test/resources/org/gradle/cli/fixtures/gradle-wrapper.jar
+        curl -sLo gradle/wrapper/gradle-wrapper.jar https://services.gradle.org/distributions/gradle-8.7-bin.zip && unzip -p gradle-8.7-bin.zip gradle-8.7/gradle/wrapper/gradle-wrapper.jar > gradle/wrapper/gradle-wrapper.jar && rm gradle-8.7-bin.zip
+
         [ -f gradlew ] || curl -sLo gradlew https://raw.githubusercontent.com/gradle/gradle/master/gradlew && chmod +x gradlew
         [ -f gradlew.bat ] || curl -sLo gradlew.bat https://raw.githubusercontent.com/gradle/gradle/master/gradlew.bat
 
