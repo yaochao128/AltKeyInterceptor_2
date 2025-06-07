@@ -1,0 +1,102 @@
+name: Build APK with Init Gradle (Safe)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: 17
+        distribution: temurin
+
+    - name: Initialize Gradle Wrapper
+      run: |
+        mkdir -p gradle/wrapper
+        [ -f gradle/wrapper/gradle-wrapper.properties ] || cat <<EOF > gradle/wrapper/gradle-wrapper.properties
+distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+distributionUrl=https\://services.gradle.org/distributions/gradle-8.7-bin.zip
+zipStorePath=wrapper/dists
+zipStoreBase=GRADLE_USER_HOME
+EOF
+        [ -f gradle/wrapper/gradle-wrapper.jar ] || curl -sLo gradle/wrapper/gradle-wrapper.jar https://github.com/gradle/gradle/raw/master/subprojects/wrapper/src/test/resources/org/gradle/cli/fixtures/gradle-wrapper.jar
+        [ -f gradlew ] || curl -sLo gradlew https://raw.githubusercontent.com/gradle/gradle/master/gradlew && chmod +x gradlew
+        [ -f gradlew.bat ] || curl -sLo gradlew.bat https://raw.githubusercontent.com/gradle/gradle/master/gradlew.bat
+
+    - name: Generate settings.gradle (if not exists)
+      run: |
+        [ -f settings.gradle ] || echo 'rootProject.name = "AltKeyInterceptor"\ninclude(":app")' > settings.gradle
+
+    - name: Generate top-level build.gradle (if not exists)
+      run: |
+        [ -f build.gradle ] || cat <<EOF > build.gradle
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.1.1'
+    }
+}
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+EOF
+
+    - name: Generate app/build.gradle (if not exists)
+      run: |
+        mkdir -p app
+        [ -f app/build.gradle ] || cat <<EOF > app/build.gradle
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.example.altkeyinterceptor'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.example.altkeyinterceptor'
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {}
+EOF
+
+    - name: Generate ProGuard config (if not exists)
+      run: |
+        [ -f app/proguard-rules.pro ] || echo '# Empty proguard config' > app/proguard-rules.pro
+
+    - name: Build APK
+      run: ./gradlew assembleDebug
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: AltKeyInterceptor-APK
+        path: app/build/outputs/apk/debug/*.apk
