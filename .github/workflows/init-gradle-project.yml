@@ -30,11 +30,13 @@ jobs:
           echo "zipStoreBase=GRADLE_USER_HOME" >> gradle/wrapper/gradle-wrapper.properties
         fi
 
-    - name: Download valid gradle-wrapper.jar
+    - name: Ensure gradle-wrapper.jar is present
       run: |
-        curl -sLo gradle-8.7-bin.zip https://services.gradle.org/distributions/gradle-8.7-bin.zip
-        unzip -p gradle-8.7-bin.zip gradle-8.7/gradle/wrapper/gradle-wrapper.jar > gradle/wrapper/gradle-wrapper.jar
-        rm gradle-8.7-bin.zip
+        if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+          echo "❌ gradle-wrapper.jar is missing. Please upload it to gradle/wrapper/."
+          exit 1
+        fi
+
 
     - name: Generate gradlew scripts
       run: |
