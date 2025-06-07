@@ -1,4 +1,4 @@
-name: Build APK with Init Gradle (Safe)
+name: Build APK with Init Gradle
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
         java-version: 17
         distribution: temurin
 
-    - name: Initialize Gradle Wrapper
+    - name: Create gradle-wrapper.properties
       run: |
         mkdir -p gradle/wrapper
         if [ ! -f gradle/wrapper/gradle-wrapper.properties ]; then
@@ -29,10 +29,21 @@ jobs:
           echo "zipStorePath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
           echo "zipStoreBase=GRADLE_USER_HOME" >> gradle/wrapper/gradle-wrapper.properties
         fi
-        curl -sLo gradle/wrapper/gradle-wrapper.jar https://services.gradle.org/distributions/gradle-8.7-bin.zip && unzip -p gradle-8.7-bin.zip gradle-8.7/gradle/wrapper/gradle-wrapper.jar > gradle/wrapper/gradle-wrapper.jar && rm gradle-8.7-bin.zip
 
-        [ -f gradlew ] || curl -sLo gradlew https://raw.githubusercontent.com/gradle/gradle/master/gradlew && chmod +x gradlew
-        [ -f gradlew.bat ] || curl -sLo gradlew.bat https://raw.githubusercontent.com/gradle/gradle/master/gradlew.bat
+    - name: Download valid gradle-wrapper.jar
+      run: |
+        curl -sLo gradle-8.7-bin.zip https://services.gradle.org/distributions/gradle-8.7-bin.zip
+        unzip -p gradle-8.7-bin.zip gradle-8.7/gradle/wrapper/gradle-wrapper.jar > gradle/wrapper/gradle-wrapper.jar
+        rm gradle-8.7-bin.zip
+
+    - name: Generate gradlew scripts
+      run: |
+        if [ ! -f gradlew ]; then
+          curl -sLo gradlew https://raw.githubusercontent.com/gradle/gradle/master/gradlew && chmod +x gradlew
+        fi
+        if [ ! -f gradlew.bat ]; then
+          curl -sLo gradlew.bat https://raw.githubusercontent.com/gradle/gradle/master/gradlew.bat
+        fi
 
     - name: Generate settings.gradle
       run: |
@@ -88,4 +99,3 @@ jobs:
       with:
         name: AltKeyInterceptor-APK
         path: app/build/outputs/apk/debug/*.apk
-
