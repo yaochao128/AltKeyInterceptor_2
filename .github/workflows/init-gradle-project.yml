@@ -22,73 +22,60 @@ jobs:
     - name: Initialize Gradle Wrapper
       run: |
         mkdir -p gradle/wrapper
-        [ -f gradle/wrapper/gradle-wrapper.properties ] || cat <<EOF > gradle/wrapper/gradle-wrapper.properties
-distributionBase=GRADLE_USER_HOME
-distributionPath=wrapper/dists
-distributionUrl=https\://services.gradle.org/distributions/gradle-8.7-bin.zip
-zipStorePath=wrapper/dists
-zipStoreBase=GRADLE_USER_HOME
-EOF
+        if [ ! -f gradle/wrapper/gradle-wrapper.properties ]; then
+          echo "distributionBase=GRADLE_USER_HOME" > gradle/wrapper/gradle-wrapper.properties
+          echo "distributionPath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
+          echo "distributionUrl=https\\://services.gradle.org/distributions/gradle-8.7-bin.zip" >> gradle/wrapper/gradle-wrapper.properties
+          echo "zipStorePath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
+          echo "zipStoreBase=GRADLE_USER_HOME" >> gradle/wrapper/gradle-wrapper.properties
+        fi
         [ -f gradle/wrapper/gradle-wrapper.jar ] || curl -sLo gradle/wrapper/gradle-wrapper.jar https://github.com/gradle/gradle/raw/master/subprojects/wrapper/src/test/resources/org/gradle/cli/fixtures/gradle-wrapper.jar
         [ -f gradlew ] || curl -sLo gradlew https://raw.githubusercontent.com/gradle/gradle/master/gradlew && chmod +x gradlew
         [ -f gradlew.bat ] || curl -sLo gradlew.bat https://raw.githubusercontent.com/gradle/gradle/master/gradlew.bat
 
-    - name: Generate settings.gradle (if not exists)
+    - name: Generate settings.gradle
       run: |
-        [ -f settings.gradle ] || echo 'rootProject.name = "AltKeyInterceptor"\ninclude(":app")' > settings.gradle
+        if [ ! -f settings.gradle ]; then
+          echo 'rootProject.name = "AltKeyInterceptor"' > settings.gradle
+          echo 'include(":app")' >> settings.gradle
+        fi
 
-    - name: Generate top-level build.gradle (if not exists)
+    - name: Generate top-level build.gradle
       run: |
-        [ -f build.gradle ] || cat <<EOF > build.gradle
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:8.1.1'
-    }
-}
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
-EOF
+        if [ ! -f build.gradle ]; then
+          echo "buildscript {" > build.gradle
+          echo "    repositories { google(); mavenCentral() }" >> build.gradle
+          echo "    dependencies { classpath 'com.android.tools.build:gradle:8.1.1' }" >> build.gradle
+          echo "}" >> build.gradle
+          echo "allprojects { repositories { google(); mavenCentral() } }" >> build.gradle
+        fi
 
-    - name: Generate app/build.gradle (if not exists)
+    - name: Generate app/build.gradle
       run: |
         mkdir -p app
-        [ -f app/build.gradle ] || cat <<EOF > app/build.gradle
-plugins {
-    id 'com.android.application'
-}
+        if [ ! -f app/build.gradle ]; then
+          echo "plugins { id 'com.android.application' }" > app/build.gradle
+          echo "android {" >> app/build.gradle
+          echo "  namespace 'com.example.altkeyinterceptor'" >> app/build.gradle
+          echo "  compileSdk 34" >> app/build.gradle
+          echo "  defaultConfig {" >> app/build.gradle
+          echo "    applicationId 'com.example.altkeyinterceptor'" >> app/build.gradle
+          echo "    minSdk 24" >> app/build.gradle
+          echo "    targetSdk 34" >> app/build.gradle
+          echo "    versionCode 1" >> app/build.gradle
+          echo "    versionName '1.0'" >> app/build.gradle
+          echo "  }" >> app/build.gradle
+          echo "  buildTypes {" >> app/build.gradle
+          echo "    release {" >> app/build.gradle
+          echo "      minifyEnabled false" >> app/build.gradle
+          echo "      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'" >> app/build.gradle
+          echo "    }" >> app/build.gradle
+          echo "  }" >> app/build.gradle
+          echo "}" >> app/build.gradle
+          echo "dependencies {}" >> app/build.gradle
+        fi
 
-android {
-    namespace 'com.example.altkeyinterceptor'
-    compileSdk 34
-
-    defaultConfig {
-        applicationId 'com.example.altkeyinterceptor'
-        minSdk 24
-        targetSdk 34
-        versionCode 1
-        versionName '1.0'
-    }
-
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-    }
-}
-
-dependencies {}
-EOF
-
-    - name: Generate ProGuard config (if not exists)
+    - name: Generate ProGuard config
       run: |
         [ -f app/proguard-rules.pro ] || echo '# Empty proguard config' > app/proguard-rules.pro
 
